@@ -44,7 +44,7 @@ async def get_employee_ids():
         raise HTTPException(status_code=503, detail="Database connection unavailable")
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT DISTINCT `Employee Id` FROM employee_data ORDER BY `Employee Id` ASC")
+        cursor.execute("SELECT DISTINCT `EmployeeId` FROM employee_data ORDER BY `EmployeeId` ASC")
         ids = [row[0] for row in cursor.fetchall()]
         return ids
     except Error as e:
@@ -63,13 +63,13 @@ async def get_employee_details(employee_id: int):
     try:
         query = """
             SELECT 
-                `Employee Id` as Employee_Id, 
-                `Employee Name` as Employee_Name, 
-                `Leave Taken` as Leave_Taken, 
+                `EmployeeId` as Employee_Id, 
+                `EmployeeName` as Employee_Name, 
+                `LeaveTaken` as Leave_Taken, 
                 `Year`, 
                 `Courses Completed` as Courses_Completed
             FROM employee_data 
-            WHERE `Employee Id` = %s
+            WHERE `EmployeeId` = %s
             ORDER BY `Year` DESC
         """
         cursor.execute(query, (employee_id,))
@@ -95,19 +95,19 @@ async def delete_employee_data(employee_id: int):
     cursor = conn.cursor()
     try:
         # Check if employee has any records
-        cursor.execute("SELECT `Employee Id` FROM employee_data WHERE `Employee Id` = %s LIMIT 1", (employee_id,))
+        cursor.execute("SELECT `EmployeeId` FROM employee_data WHERE `EmployeeId` = %s LIMIT 1", (employee_id,))
         if not cursor.fetchone():
-            raise HTTPException(status_code=404, detail=f"No records found for Employee ID {employee_id} to delete.")
+            raise HTTPException(status_code=404, detail=f"No records found for EmployeeId {employee_id} to delete.")
 
-        query = "DELETE FROM employee_data WHERE `Employee Id` = %s"
+        query = "DELETE FROM employee_data WHERE `EmployeeId` = %s"
         cursor.execute(query, (employee_id,))
         conn.commit() 
 
         if cursor.rowcount == 0:
             # Should have been caught by the check above, but as a safeguard
-            raise HTTPException(status_code=404, detail=f"No records were deleted for Employee ID {employee_id} (they might have been deleted by another process).")
+            raise HTTPException(status_code=404, detail=f"No records were deleted for EmployeeId {employee_id} (they might have been deleted by another process).")
         
-        return {"message": f"Successfully deleted {cursor.rowcount} record(s) for Employee ID {employee_id}"}
+        return {"message": f"Successfully deleted {cursor.rowcount} record(s) for EmployeeId {employee_id}"}
     except Error as e:
         if conn.is_connected():
             conn.rollback()
@@ -129,11 +129,11 @@ async def update_employee_record(employee_id: int, year: int, payload: EmployeeU
     params = []
 
     if payload.Employee_Name is not None:
-        set_clauses.append("`Employee Name` = %s")
+        set_clauses.append("`EmployeeName` = %s")
         params.append(payload.Employee_Name)
     
     if payload.Leave_Taken is not None:
-        set_clauses.append("`Leave Taken` = %s")
+        set_clauses.append("`LeaveTaken` = %s")
         params.append(payload.Leave_Taken)
 
     if payload.Courses_Completed is not None:
@@ -147,28 +147,28 @@ async def update_employee_record(employee_id: int, year: int, payload: EmployeeU
     
     try:
         # First, check if the record exists
-        check_query = "SELECT `Employee Id` FROM employee_data WHERE `Employee Id` = %s AND `Year` = %s"
+        check_query = "SELECT `EmployeeId` FROM employee_data WHERE `EmployeeId` = %s AND `Year` = %s"
         cursor.execute(check_query, (employee_id, year))
         if not cursor.fetchone():
-            raise HTTPException(status_code=404, detail=f"Record for Employee ID {employee_id} and Year {year} not found.")
+            raise HTTPException(status_code=404, detail=f"Record for EmployeeId {employee_id} and Year {year} not found.")
 
-        update_query = f"UPDATE employee_data SET {', '.join(set_clauses)} WHERE `Employee Id` = %s AND `Year` = %s"
+        update_query = f"UPDATE employee_data SET {', '.join(set_clauses)} WHERE `EmployeeId` = %s AND `Year` = %s"
         cursor.execute(update_query, tuple(params))
         conn.commit()
 
         if cursor.rowcount == 0:
-             raise HTTPException(status_code=404, detail=f"Record for Employee ID {employee_id} and Year {year} found but not updated (data might be the same or issue occurred).")
+             raise HTTPException(status_code=404, detail=f"Record for EmployeeId {employee_id} and Year {year} found but not updated (data might be the same or issue occurred).")
 
         # Fetch the updated record to return
         select_query = """
             SELECT 
-                `Employee Id` as Employee_Id, 
-                `Employee Name` as Employee_Name, 
-                `Leave Taken` as Leave_Taken, 
+                `EmployeeId` as Employee_Id, 
+                `EmployeeName` as Employee_Name, 
+                `LeaveTaken` as Leave_Taken, 
                 `Year`, 
                 `Courses Completed` as Courses_Completed
             FROM employee_data 
-            WHERE `Employee Id` = %s AND `Year` = %s
+            WHERE `EmployeeId` = %s AND `Year` = %s
         """
         cursor.execute(select_query, (employee_id, year))
         updated_record = cursor.fetchone()
