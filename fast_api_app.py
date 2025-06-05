@@ -6,12 +6,12 @@ from typing import List, Optional
 
 app = FastAPI()
 
-# --- Database Configuration ---
+!
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'your_mysql_user',       # Replace with your MySQL username
-    'password': 'your_mysql_password', # Replace with your MySQL password
-    'database': 'your_database_name'   # Replace with your database name
+    'host': 'localhost',        # Or your MySQL server IP/hostname
+    'user': 'root',
+    'password': 'current_password_here',
+    'database': 'db' # The database where 'Employee_details' table exists
 }
 
 # --- Pydantic Models ---
@@ -44,7 +44,7 @@ async def get_employee_ids():
         raise HTTPException(status_code=503, detail="Database connection unavailable")
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT DISTINCT `EmployeeId` FROM employee_data ORDER BY `EmployeeId` ASC")
+        cursor.execute("SELECT DISTINCT `EmployeeId` FROM Employee_details ORDER BY `EmployeeId` ASC")
         ids = [row[0] for row in cursor.fetchall()]
         return ids
     except Error as e:
@@ -67,8 +67,8 @@ async def get_employee_details(employee_id: int):
                 `EmployeeName` as Employee_Name, 
                 `LeaveTaken` as Leave_Taken, 
                 `Year`, 
-                `Courses Completed` as Courses_Completed
-            FROM employee_data 
+                `CoursesCompleted` as Courses_Completed
+            FROM Employee_details 
             WHERE `EmployeeId` = %s
             ORDER BY `Year` DESC
         """
@@ -86,8 +86,8 @@ async def get_employee_details(employee_id: int):
             cursor.close()
             conn.close()
 
-@app.delete("/employee/{employee_id}", status_code=200)
-async def delete_employee_data(employee_id: int):
+@app.delete("/employee_delete/{employee_id}", status_code=200)
+async def delete_Employee_details(employee_id: int):
     conn = get_db_connection()
     if not conn:
         raise HTTPException(status_code=503, detail="Database connection unavailable")
@@ -95,11 +95,11 @@ async def delete_employee_data(employee_id: int):
     cursor = conn.cursor()
     try:
         # Check if employee has any records
-        cursor.execute("SELECT `EmployeeId` FROM employee_data WHERE `EmployeeId` = %s LIMIT 1", (employee_id,))
+        cursor.execute("SELECT `EmployeeId` FROM Employee_details WHERE `EmployeeId` = %s LIMIT 1", (employee_id,))
         if not cursor.fetchone():
             raise HTTPException(status_code=404, detail=f"No records found for EmployeeId {employee_id} to delete.")
 
-        query = "DELETE FROM employee_data WHERE `EmployeeId` = %s"
+        query = "DELETE FROM Employee_details WHERE `EmployeeId` = %s"
         cursor.execute(query, (employee_id,))
         conn.commit() 
 
@@ -137,7 +137,7 @@ async def update_employee_record(employee_id: int, year: int, payload: EmployeeU
         params.append(payload.Leave_Taken)
 
     if payload.Courses_Completed is not None:
-        set_clauses.append("`Courses Completed` = %s")
+        set_clauses.append("`CoursesCompleted` = %s")
         params.append(payload.Courses_Completed)
     
     if not set_clauses:
@@ -147,12 +147,12 @@ async def update_employee_record(employee_id: int, year: int, payload: EmployeeU
     
     try:
         # First, check if the record exists
-        check_query = "SELECT `EmployeeId` FROM employee_data WHERE `EmployeeId` = %s AND `Year` = %s"
+        check_query = "SELECT `EmployeeId` FROM Employee_details WHERE `EmployeeId` = %s AND `Year` = %s"
         cursor.execute(check_query, (employee_id, year))
         if not cursor.fetchone():
             raise HTTPException(status_code=404, detail=f"Record for EmployeeId {employee_id} and Year {year} not found.")
 
-        update_query = f"UPDATE employee_data SET {', '.join(set_clauses)} WHERE `EmployeeId` = %s AND `Year` = %s"
+        update_query = f"UPDATE Employee_details SET {', '.join(set_clauses)} WHERE `EmployeeId` = %s AND `Year` = %s"
         cursor.execute(update_query, tuple(params))
         conn.commit()
 
@@ -166,8 +166,8 @@ async def update_employee_record(employee_id: int, year: int, payload: EmployeeU
                 `EmployeeName` as Employee_Name, 
                 `LeaveTaken` as Leave_Taken, 
                 `Year`, 
-                `Courses Completed` as Courses_Completed
-            FROM employee_data 
+                `CoursesCompleted` as Courses_Completed
+            FROM Employee_details 
             WHERE `EmployeeId` = %s AND `Year` = %s
         """
         cursor.execute(select_query, (employee_id, year))
@@ -186,9 +186,9 @@ async def update_employee_record(employee_id: int, year: int, payload: EmployeeU
             cursor.close()
             conn.close()
 
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
 
 
 
