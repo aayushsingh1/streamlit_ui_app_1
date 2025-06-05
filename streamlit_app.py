@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 import plotly.express as px
 
-FASTAPI_URL = "http://127.0.0.1:8000"
+FASTAPI_URL = "http://127.0.0.1:46968"
 
 st.set_page_config(layout="wide")
 
@@ -14,7 +14,7 @@ def fetch_employee_ids():
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        st.error(f"Error fetching employee IDs: {e}")
+        st.error(f"Error fetching EmployeeIDs: {e}")
         return []
 
 def fetch_employee_data(employee_id):
@@ -25,11 +25,11 @@ def fetch_employee_data(employee_id):
         response.raise_for_status()
         data = response.json()
         if not data: # Handle case where employee exists but has no records
-            return pd.DataFrame(columns=["Employee Id", "Employee Name", "Leave Taken", "Year", "Courses Completed"])
+            return pd.DataFrame(columns=["EmployeeID", "EmployeeName", "LeaveTaken", "Year", "Courses Completed"])
         df = pd.DataFrame(data).rename(columns={
-            "Employee_Id": "Employee Id",
-            "Employee_Name": "Employee Name",
-            "Leave_Taken": "Leave Taken",
+            "Employee_Id": "EmployeeID",
+            "Employee_Name": "EmployeeName",
+            "Leave_Taken": "LeaveTaken",
             "Year": "Year",
             "Courses_Completed": "Courses Completed"
         })
@@ -48,9 +48,9 @@ with top_section:
     employee_ids_list = fetch_employee_ids()
     
     if not employee_ids_list:
-        st.warning("No Employee IDs found or unable to connect to the backend.")
+        st.warning("No EmployeeIDs found or unable to connect to the backend.")
         selected_employee_id_input = st.number_input(
-            "Enter Employee ID (if known):", 
+            "Enter EmployeeID (if known):", 
             min_value=0, 
             step=1, 
             key="manual_emp_id_input_top"
@@ -58,7 +58,7 @@ with top_section:
         selected_employee_id = selected_employee_id_input if selected_employee_id_input > 0 else None
     else:
         selected_employee_id = st.selectbox(
-            "Select Employee ID:",
+            "Select EmployeeID:",
             options=[""] + employee_ids_list, # Add an empty option
             index=0,
             format_func=lambda x: "Select an ID" if x == "" else f"{x}",
@@ -67,13 +67,13 @@ with top_section:
     
     employee_df = fetch_employee_data(selected_employee_id)
 
-    st.subheader(f"Details for Employee ID: {selected_employee_id if selected_employee_id else 'N/A'}")
+    st.subheader(f"Details for EmployeeID: {selected_employee_id if selected_employee_id else 'N/A'}")
     if selected_employee_id and not employee_df.empty:
-        st.dataframe(employee_df[["Employee Id", "Employee Name", "Leave Taken", "Year", "Courses Completed"]], use_container_width=True)
+        st.dataframe(employee_df[["EmployeeID", "EmployeeName", "LeaveTaken", "Year", "Courses Completed"]], use_container_width=True)
     elif selected_employee_id and employee_df.empty:
-        st.info(f"No data found for Employee ID: {selected_employee_id}. The employee might exist but have no records, or the ID is incorrect.")
+        st.info(f"No data found for EmployeeID: {selected_employee_id}. The employee might exist but have no records, or the ID is incorrect.")
     else:
-        st.info("Select an Employee ID to see details.")
+        st.info("Select an EmployeeID to see details.")
 
 st.markdown("---")
 
@@ -83,11 +83,11 @@ with bottom_section:
     left_col, right_col = st.columns(2)
 
     with left_col:
-        st.subheader("📊 Year-wise Leave Taken")
-        if selected_employee_id and not employee_df.empty and 'Leave Taken' in employee_df.columns and 'Year' in employee_df.columns:
-            leave_data = employee_df.groupby("Year")["Leave Taken"].sum().reset_index()
+        st.subheader("📊 Year-wise LeaveTaken")
+        if selected_employee_id and not employee_df.empty and 'LeaveTaken' in employee_df.columns and 'Year' in employee_df.columns:
+            leave_data = employee_df.groupby("Year")["LeaveTaken"].sum().reset_index()
             if not leave_data.empty:
-                fig_pie = px.pie(leave_data, values="Leave Taken", names="Year", title="Leave Distribution by Year")
+                fig_pie = px.pie(leave_data, values="LeaveTaken", names="Year", title="Leave Distribution by Year")
                 st.plotly_chart(fig_pie, use_container_width=True)
             else:
                 st.info("No leave data to display for pie chart.")
@@ -97,7 +97,7 @@ with bottom_section:
         # Update Record Section (below pie chart)
         if selected_employee_id and not employee_df.empty:
             st.markdown("---")
-            st.subheader(f"✏️ Update Record for Employee ID: {selected_employee_id}")
+            st.subheader(f"✏️ Update Record for EmployeeID: {selected_employee_id}")
             available_years = sorted(employee_df["Year"].unique())
             if not available_years:
                 st.info("No specific yearly records found for this employee to update.")
@@ -114,14 +114,14 @@ with bottom_section:
                         with st.form(key=f"update_employee_form_{selected_employee_id}_{selected_year_to_update}"): # Dynamic key
                             st.write(f"Updating record for Year: {selected_year_to_update}")
                             updated_employee_name = st.text_input(
-                                "Employee Name:",
-                                value=current_record["Employee Name"],
+                                "EmployeeName:",
+                                value=current_record["EmployeeName"],
                                 key=f"update_name_{selected_employee_id}_{selected_year_to_update}"
                             )
                             updated_leave_taken = st.number_input(
-                                "Leave Taken:",
+                                "LeaveTaken:",
                                 min_value=0,
-                                value=int(current_record["Leave Taken"]),
+                                value=int(current_record["LeaveTaken"]),
                                 key=f"update_leave_{selected_employee_id}_{selected_year_to_update}"
                             )
                             updated_courses_completed = st.number_input(
@@ -131,13 +131,13 @@ with bottom_section:
                                 key=f"update_courses_{selected_employee_id}_{selected_year_to_update}"
                             )
                             # Yellow color hint in text, actual button is standard
-                            submit_update_button = st.form_submit_button(label="💾 Submit Update (Yellow Theme)")
+                            submit_update_button = st.form_submit_button(label="💾 Update ")
 
                             if submit_update_button:
                                 payload = {}
-                                if updated_employee_name != current_record["Employee Name"]:
+                                if updated_employee_name != current_record["EmployeeName"]:
                                     payload["Employee_Name"] = updated_employee_name
-                                if updated_leave_taken != current_record["Leave Taken"]:
+                                if updated_leave_taken != current_record["LeaveTaken"]:
                                     payload["Leave_Taken"] = updated_leave_taken
                                 if updated_courses_completed != current_record["Courses Completed"]:
                                     payload["Courses_Completed"] = updated_courses_completed
@@ -150,7 +150,7 @@ with bottom_section:
                                         response = requests.put(update_url, json=payload)
                                         if response.status_code == 200:
                                             st.success(f"Successfully updated record. Refreshing data...")
-                                            st.experimental_rerun()
+                                            st.rerun()
                                         else:
                                             st.error(f"Failed to update: {response.status_code} - {response.json().get('detail', 'Unknown error')}")
                                     except requests.exceptions.RequestException as e:
@@ -180,33 +180,27 @@ with bottom_section:
             st.markdown("---")
             st.subheader("🗑️ Delete Employee Records")
             # Red color hint in text
-            if st.button(f"🚨 Delete ALL Records for Employee ID: {selected_employee_id}", key=f"delete_employee_btn_{selected_employee_id}"): # Dynamic key
-                confirmation = st.empty() # Placeholder for confirmation
-                # Simple confirmation, could be more robust with st.expander or modal
-                st.warning(f"Are you sure you want to delete all records for Employee ID {selected_employee_id}?")
-                col_confirm, col_cancel = st.columns(2)
-                with col_confirm:
-                    if st.button("YES, DELETE", key=f"confirm_delete_{selected_employee_id}"):
-                        try:
-                            response = requests.delete(f"{FASTAPI_URL}/employee/{selected_employee_id}")
-                            if response.status_code == 200:
-                                st.success(f"Successfully deleted records. Refreshing data...")
-                                # Clear selection or rerun
-                                st.experimental_rerun()
-                            elif response.status_code == 404:
-                                st.error(f"Employee ID {selected_employee_id} not found for deletion or no records existed.")
-                            else:
-                                st.error(f"Failed to delete: {response.status_code} - {response.json().get('detail', 'Unknown error')}")
-                        except requests.exceptions.RequestException as e:
-                            st.error(f"Error connecting to API for deletion: {e}")
-                        confirmation.empty() # Clear confirmation message
-                with col_cancel:
-                    if st.button("CANCEL", key=f"cancel_delete_{selected_employee_id}"):
-                        confirmation.empty() # Clear confirmation message
-                        st.info("Deletion cancelled.")
+            if st.button(f"🚨 Delete ALL Records for EmployeeID: {selected_employee_id}", key=f"delete_employee_btn_{selected_employee_id}"): # Dynamic key
+                response = requests.delete(f"{FASTAPI_URL}/employee_delete/{selected_employee_id}")
+                
+        #         confirmation = st.empty() # Placeholder for confirmation
+        #         # Simple confirmation, could be more robust with st.expander or modal
+        #         st.warning(f"Are you sure you want to delete all records for EmployeeID {selected_employee_id}?")
+        #         col_confirm, col_cancel = st.columns(2)
+        #         with col_confirm:
+        #             if st.button("YES, DELETE", key=f"confirm_delete_{selected_employee_id}"):
+        #                 try:
+        #                     response = requests.delete(f"{FASTAPI_URL}/employee_delete/{selected_employee_id}")
+                            
+        #                 except requests.exceptions.RequestException as e:
+        #                     st.error(f"Error connecting to API for deletion: {e}")
+        #         with col_cancel:
+        #             if st.button("CANCEL", key=f"cancel_delete_{selected_employee_id}"):
+        #                 confirmation.empty() # Clear confirmation message
+        #                 st.info("Deletion cancelled.")
             
-        elif selected_employee_id and employee_df.empty:
-             st.info("No data loaded for this employee to enable deletion.")
+        # elif selected_employee_id and employee_df.empty:
+        #      st.info("No data loaded for this employee to enable deletion.")
 
 
 # Ensure to run FastAPI backend first: uvicorn fastapi_app:app --reload
