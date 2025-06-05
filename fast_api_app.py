@@ -6,7 +6,7 @@ from typing import List, Optional
 
 app = FastAPI()
 
-!
+
 DB_CONFIG = {
     'host': 'localhost',        # Or your MySQL server IP/hostname
     'user': 'root',
